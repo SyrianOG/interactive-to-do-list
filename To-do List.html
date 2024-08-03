@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive To-Do List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM8J6AqCBXqXt8mt94YFMC6kZimz/5BvIbbd62G" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #ffafbd, #ffc3a0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        h1 {
+            color: #ad1457;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .refresh-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #ad1457;
+            transition: color 0.3s;
+        }
+        .refresh-icon:hover {
+            color: #d81b60;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8bbd0;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s, box-shadow 0.3s, opacity 0.5s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        li.completed {
+            background-color: #d1c4e9;
+            text-decoration: line-through;
+        }
+        input[type="text"] {
+            padding: 12px;
+            width: calc(100% - 24px);
+            margin: 10px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 1em;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #ec407a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #d81b60;
+            transform: scale(1.05);
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .actions button {
+            flex: 1;
+        }
+        .language-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            50% {
+                transform: translateX(5px);
+            }
+            75% {
+                transform: translateX(-5px);
+            }
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-buttons">
+            <button onclick="translatePage('en')">English</button>
+            <button onclick="translatePage('ar')">العربية</button>
+            <button onclick="translatePage('es')">Español</button>
+        </div>
+        <i class="fas fa-sync-alt refresh-icon" onclick="sortTasks()"></i>
+        <h1 id="title">To-Do List</h1>
+        <input type="text" id="new-task" placeholder="Add a new task" onkeypress="handleKeyPress(event)">
+        <button onclick="addTask()" id="add-task-btn">Add Task</button>
+        <ul id="task-list"></ul>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                title: 'To-Do List',
+                placeholder: 'Add a new task',
+                addTask: 'Add Task',
+                complete: 'Complete',
+                edit: 'Edit',
+                delete: 'Delete',
+                editPrompt: 'Edit your task'
+            },
+            ar: {
+                title: 'قائمة المهام',
+                placeholder: 'أضف مهمة جديدة',
+                addTask: 'أضف مهمة',
+                complete: 'إكمال',
+                edit: 'تعديل',
+                delete: 'حذف',
+                editPrompt: 'عدل المهمة'
+            },
+            es: {
+                title: 'Lista de Tareas',
+                placeholder: 'Agregar una nueva tarea',
+                addTask: 'Agregar Tarea',
+                complete: 'Completar',
+                edit: 'Editar',
+                delete: 'Eliminar',
+                editPrompt: 'Editar tu tarea'
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', loadTasks);
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addTask();
+            }
+        }
+
+        function addTask() {
+            const taskInput = document.getElementById('new-task');
+            const taskText = taskInput.value.trim();
+            if (taskText !== '') {
+                const taskList = document.getElementById('task-list');
+                const listItem = createTaskElement(taskText);
+                taskList.appendChild(listItem);
+                taskInput.value = '';
+                saveTasks();
+            }
+        }
+
+        function toggleTask(button) {
+            const listItem = button.parentElement.parentElement;
+            listItem.classList.toggle('completed');
+            saveTasks();
+        }
+
+        function deleteTask(button) {
+            const listItem = button.parentElement.parentElement;
+            listItem.classList.add('shake');
+            listItem.addEventListener('animationend', () => {
+                listItem.remove();
+                saveTasks();
+            });
+        }
+
+        function editTask(button) {
+            const listItem = button.parentElement.parentElement;
+            const taskText = listItem.querySelector('span').textContent;
+            const lang = document.documentElement.lang;
+            const newTaskText = prompt(translations[lang].editPrompt, taskText);
+            if (newTaskText !== null) {
+                listItem.querySelector('span').textContent = newTaskText;
+                saveTasks();
+            }
+        }
+
+        function createTaskElement(taskText) {
+            const lang = document.documentElement.lang;
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <span>${taskText}</span>
+                <div class="actions">
+                    <button onclick="toggleTask(this)">${translations[lang].complete}</button>
+                    <button onclick="editTask(this)">${translations[lang].edit}</button>
+                    <button onclick="deleteTask(this)">${translations[lang].delete}</button>
+                </div>`;
+            return listItem;
+        }
+
+        function saveTasks() {
+            const taskList = document.getElementById('task-list');
+            const tasks = [];
+            taskList.querySelectorAll('li').forEach(listItem => {
+                tasks.push({
+                    text: listItem.querySelector('span').textContent,
+                    completed: listItem.classList.contains('completed')
+                });
+            });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            const taskList = document.getElementById('task-list');
+            tasks.forEach(task => {
+                const listItem = createTaskElement(task.text);
+                if (task.completed) {
+                    listItem.classList.add('completed');
+                }
+                taskList.appendChild(listItem);
+            });
+        }
+
+        function sortTasks() {
+            const taskList = document.getElementById('task-list');
+            const tasks = Array.from(taskList.querySelectorAll('li'));
+            tasks.sort((a, b) => {
+                const textA = a.querySelector('span').textContent.toLowerCase();
+                const textB = b.querySelector('span').textContent.toLowerCase();
+                return textA.localeCompare(textB);
+            });
+            taskList.innerHTML = '';
+            tasks.forEach(task => taskList.appendChild(task));
+            saveTasks();
+        }
+
+        function translatePage(lang) {
+            document.documentElement.lang = lang;
+            document.body.style.transition = 'background-color 0.5s ease';
+            document.body.style.backgroundColor = lang === 'ar' ? '#f0e68c' : lang === 'es' ? '#98fb98' : '#ffc3a0';
+            document.getElementById('title').textContent = translations[lang].title;
+            document.getElementById('new-task').placeholder = translations[lang].placeholder;
+            document.getElementById('add-task-btn').textContent = translations[lang].addTask;
+
+            const taskList = document.getElementById('task-list');
+            taskList.querySelectorAll('li').forEach(listItem => {
+                const actions = listItem.querySelector('.actions');
+                actions.children[0].textContent = translations[lang].complete;
+                actions.children[1].textContent = translations[lang].edit;
+                actions.children[2].textContent = translations[lang].delete;
+            });
+        }
+    </script>
+</body>
+</html>
